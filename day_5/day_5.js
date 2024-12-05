@@ -12,7 +12,6 @@ What do you get if you add up the middle page number from those correctly-ordere
 
 const data = fs.readFileSync("day_5/day_5_input.txt", "utf8");
 
-
 // create array of rules
 // create 2D array of print orders
 
@@ -32,10 +31,12 @@ const [rules, updates] = data.split(/\n\n/).map((line, idx) =>
 
 // add together middle page numbers
 
-const filterOutIncorrectUpdates = (update, idx, arr) => {
-  // check update against rules
-  // if adheres to rule, return true
-  return rules.every(([rule1, rule2]) => {
+const [correctUpdates, incorrectUpdates] = [[], []];
+
+/** check if update follows ruls */
+const isCorrectUpdate =
+  (update) =>
+  ([rule1, rule2]) => {
     // for example, [ '61', '53' ] means if update contains both numbers, they must be in this order
     const firstPage = update.findIndex((ele) => ele == rule1);
     const secondPage = update.findIndex((ele) => ele == rule2);
@@ -46,13 +47,52 @@ const filterOutIncorrectUpdates = (update, idx, arr) => {
     }
 
     return firstPage < secondPage;
-  });
+  };
+
+/** sort page numbers of incorrect updates to follow rules */
+const orderUpdate = (a, b) => {
+  // for example, [ '61', '53' ] means if update contains both numbers, they must be in this order
+  let sortOrder = 0;
+  for (const rule of rules) {
+    // one or both pages not in update
+    if (!rule.includes(a) || !rule.includes(b)) {
+      continue;
+    }
+
+    // if both pages in update, check order and break loop
+    // if order is a,b: return -1
+    if (rule.findIndex((ele) => a == ele) === 0) {
+      sortOrder = -1;
+    } else {
+      // if order is b,a: return 1
+      sortOrder = 1;
+    }
+    break;
+  }
+  return sortOrder;
 };
 
-const filteredUpdates = updates.filter(filterOutIncorrectUpdates);
+updates.map((update) => {
+  if (rules.every(isCorrectUpdate(update))) {
+    correctUpdates.push(update);
+  } else {
+    // correct update then push to list
+    incorrectUpdates.push(update.sort(orderUpdate));
+  }
+});
 
-const summation = filteredUpdates.reduce(
-  (acc, cur) => acc + Number(cur[Math.ceil(cur.length - 1) / 2]),
+/** add together all middle page numbers */
+const calculateMiddleUpdateSummation = (acc, cur) =>
+  acc + Number(cur[Math.ceil(cur.length - 1) / 2]);
+
+const correctSummation = correctUpdates.reduce(
+  calculateMiddleUpdateSummation,
   0
 );
-console.log("summation", summation);
+const incorrectSummation = incorrectUpdates.reduce(
+  calculateMiddleUpdateSummation,
+  0
+);
+
+console.log("summation of correct updates:", correctSummation);
+console.log("summation of incorrect updates:", incorrectSummation);
